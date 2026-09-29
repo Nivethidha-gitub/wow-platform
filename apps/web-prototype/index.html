@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AquaRoute — Water Delivery App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F8FA;
+    --surface:#FFFFFF;
+    --ink:#0F2630;
+    --ink-soft:#5C7580;
+    --ink-faint:#93A8AF;
+    --primary:#0B5C7A;
+    --primary-dark:#073A4E;
+    --accent:#00B6D6;
+    --can:#E4F4F8;
+    --can-line:#CFE9EF;
+    --warn:#F2994A;
+    --warn-bg:#FDF1E4;
+    --good:#2FA86B;
+    --good-bg:#E7F6EE;
+    --danger:#E0563C;
+    --font-d:'Poppins',sans-serif;
+    --font-b:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:var(--font-b);
+    background:linear-gradient(180deg,#EAF5F8 0%, #F7FAFB 40%);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:32px 16px 60px;
+  }
+  .page-head{ text-align:center; max-width:640px; margin-bottom:26px; }
+  .page-head .eyebrow{
+    font-weight:600; font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:8px;
+  }
+  .page-head h1{ font-family:var(--font-d); font-weight:700; font-size:28px; color:var(--primary-dark); }
+  .page-head p{ color:var(--ink-soft); font-size:14px; margin-top:8px; line-height:1.5; }
+
+  /* ===== SESSION BAR (shown once logged in) ===== */
+  .session-bar{
+    display:none;
+    align-items:center; gap:12px;
+    background:var(--surface); padding:10px 18px; border-radius:999px;
+    box-shadow:0 2px 10px rgba(11,92,122,.10); margin-bottom:28px;
+    font-size:13px; color:var(--ink-soft);
+  }
+  .session-bar.active{ display:flex; }
+  .session-bar b{ color:var(--primary-dark); }
+  .session-bar button{
+    border:none; background:var(--warn-bg); color:var(--warn);
+    font-weight:600; font-size:12px; padding:6px 14px; border-radius:999px; cursor:pointer;
+  }
+
+  /* ===== LOGIN CARD ===== */
+  .login-card{
+    width:375px; max-width:92vw; background:var(--surface);
+    border-radius:24px; padding:28px 24px; box-shadow:0 20px 50px -20px rgba(7,58,78,.3);
+  }
+  .role-tabs{ display:flex; gap:6px; background:var(--bg); padding:5px; border-radius:999px; margin-bottom:22px; }
+  .role-tabs button{
+    flex:1; border:none; background:transparent; font-weight:600; font-size:12.5px;
+    color:var(--ink-soft); padding:9px 6px; border-radius:999px; cursor:pointer; transition:.2s;
+  }
+  .role-tabs button.active{ background:var(--primary); color:#fff; }
+  .login-card label{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; }
+  .login-card input{
+    width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--can-line);
+    font-size:14px; font-family:var(--font-b); margin-bottom:16px; outline:none;
+  }
+  .login-card input:focus{ border-color:var(--accent); }
+  .btn{
+    width:100%; border:none; border-radius:12px; padding:13px; font-weight:600;
+    font-size:14px; cursor:pointer; font-family:var(--font-b);
+  }
+  .btn-primary{ background:var(--primary); color:#fff; }
+  .btn-primary:hover{ background:var(--primary-dark); }
+  .btn-light{ background:rgba(255,255,255,.22); color:#fff; }
+  .btn-outline{ background:transparent; border:1.5px solid var(--can-line); color:var(--ink-soft); }
+  .link-btn{
+    background:none; border:none; color:var(--accent); font-weight:600; font-size:12.5px;
+    cursor:pointer; margin-top:12px; width:100%; text-align:center;
+  }
+  .field-note{ font-size:11.5px; color:var(--ink-faint); margin:-10px 0 16px; }
+  .error-msg{
+    background:var(--warn-bg); color:var(--warn); font-size:12.5px; padding:10px 12px;
+    border-radius:10px; margin-bottom:14px; display:none;
+  }
+  .error-msg.show{ display:block; }
+  .dev-otp-hint{
+    background:var(--can); color:var(--primary-dark); font-size:12px; padding:9px 12px;
+    border-radius:10px; margin-bottom:14px; text-align:center;
+  }
+
+  .mode-switch{ display:flex; gap:6px; background:var(--surface); padding:5px; border-radius:999px;
+    box-shadow:0 2px 10px rgba(11,92,122,.10); margin-bottom:34px; }
+
+  /* ===== PHONE FRAME ===== */
+  .phone{ width:375px; max-width:92vw; height:760px; background:var(--surface); border-radius:40px;
+    border:8px solid var(--primary-dark); box-shadow:0 30px 60px -20px rgba(7,58,78,.35);
+    overflow:hidden; position:relative; display:none; flex-direction:column; }
+  .phone.active{ display:flex; }
+  .notch{ height:26px; background:var(--primary-dark); display:flex; align-items:center; justify-content:center; }
+  .notch::before{ content:''; width:80px; height:16px; background:var(--primary-dark); border-radius:0 0 14px 14px; }
+  .screen{ flex:1; overflow-y:auto; background:var(--bg); display:none; }
+  .screen.active{display:block;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .topbar{ padding:18px 20px 10px; }
+  .greet-row{ display:flex; justify-content:space-between; align-items:center; }
+  .greet-row h2{ font-family:var(--font-d); font-size:19px; color:var(--primary-dark); }
+  .loc-chip{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; }
+  .avatar{ width:38px; height:38px; border-radius:50%; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-family:var(--font-d); }
+  .content{ padding:8px 20px 24px; }
+  .card{ background:linear-gradient(135deg,var(--primary),var(--primary-dark)); border-radius:20px;
+    padding:20px; color:#fff; margin-bottom:18px; }
+  .gauge-card{ display:flex; gap:16px; align-items:center; }
+  .gauge{ position:relative; width:84px; height:84px; flex-shrink:0; }
+  .gauge svg{ position:absolute; top:0; left:0; transform:rotate(-90deg); }
+  .gauge-label{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge-label .n{ font-family:var(--font-d); font-weight:800; font-size:22px; }
+  .gauge-label .u{ font-size:8px; letter-spacing:.05em; opacity:.85; }
+  .gauge-text h3{ font-family:var(--font-d); font-size:13.5px; margin-bottom:5px; line-height:1.3; }
+  .gauge-text p{ font-size:11px; opacity:.85; margin-bottom:10px; line-height:1.4; }
+  .banner{ display:flex; align-items:center; gap:10px; background:var(--good-bg); color:var(--good);
+    padding:12px 14px; border-radius:14px; margin-bottom:20px; font-size:12px; }
+  .banner .dot{ width:8px; height:8px; border-radius:50%; background:var(--good); flex-shrink:0; }
+  .banner b{ display:block; font-size:12.5px; margin-bottom:2px; }
+  .section-title{ font-family:var(--font-d); font-weight:600; font-size:14.5px; color:var(--primary-dark);
+    display:flex; justify-content:space-between; margin-bottom:12px; }
+  .section-title .link{ font-size:11.5px; color:var(--accent); font-weight:600; }
+  .prod-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+  .prod-card{ background:var(--surface); border-radius:16px; padding:14px; box-shadow:0 2px 8px rgba(11,92,122,.06); }
+  .prod-icon{ font-size:26px; margin-bottom:8px; }
+  .prod-card h4{ font-size:13px; margin-bottom:4px; }
+  .price{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+  .stepper{ display:flex; align-items:center; justify-content:space-between; background:var(--can);
+    border-radius:10px; padding:4px 8px; }
+  .stepper button{ border:none; background:none; font-size:15px; color:var(--primary); cursor:pointer; font-weight:700; }
+  .stepper .qty{ font-weight:600; font-size:13px; }
+  .sub-banner{ background:var(--can); border-radius:16px; padding:16px; display:flex;
+    justify-content:space-between; align-items:center; gap:12px; }
+  .sub-banner h4{ font-size:12.5px; color:var(--primary-dark); margin-bottom:3px; }
+  .sub-banner p{ font-size:11px; color:var(--ink-soft); }
+  .cat-item{ display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:16px;
+    padding:14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(11,92,122,.05); }
+  .cat-icon{ font-size:24px; }
+  .cat-info{ flex:1; }
+  .cat-info h4{ font-size:13px; margin-bottom:3px; }
+  .cat-info span{ font-size:11px; color:var(--ink-soft); }
+  .cart-bar{ position:absolute; bottom:0; left:0; right:0; background:var(--primary-dark); color:#fff;
+    padding:16px 20px; display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:600; }
+  .cart-bar .go{ color:var(--accent); cursor:pointer; }
+  .track-steps{ display:flex; flex-direction:column; }
+  .t-step{ display:flex; gap:14px; }
+  .t-line{ display:flex; flex-direction:column; align-items:center; }
+  .t-dot{ width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:11px; color:#fff; flex-shrink:0; }
+  .t-dot.done{ background:var(--good); }
+  .t-dot.active{ background:var(--accent); box-shadow:0 0 0 4px rgba(0,182,214,.2); }
+  .t-dot.todo{ background:var(--can-line); }
+  .t-bar{ width:2px; flex:1; background:var(--can-line); min-height:24px; }
+  .t-bar.filled{ background:var(--good); }
+  .t-body{ padding-bottom:22px; }
+  .t-body h4{ font-size:13px; margin-bottom:2px; }
+  .t-body span{ font-size:11px; color:var(--ink-soft); }
+  .route-svg{ width:100%; margin:14px 0; }
+  .rider-card{ display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:16px;
+    padding:14px; box-shadow:0 2px 8px rgba(11,92,122,.05); }
+  .rider-avatar{ width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; }
+  .rider-info{ flex:1; }
+  .rider-info h4{ font-size:13px; }
+  .rider-info span{ font-size:11px; color:var(--ink-soft); }
+  .call-btn{ width:36px; height:36px; border-radius:50%; border:none; background:var(--can); cursor:pointer; }
+  .prof-row{ display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px;
+    padding:13px 14px; margin-bottom:10px; }
+  .prof-ic{ font-size:18px; }
+  .prof-row h4{ font-size:13px; }
+  .prof-row span{ font-size:11px; color:var(--ink-soft); }
+  .toggle{ width:36px; height:20px; background:var(--good); border-radius:999px; margin-left:auto; position:relative; }
+  .toggle::after{ content:''; width:16px; height:16px; background:#fff; border-radius:50%; position:absolute; top:2px; right:2px; }
+  .tabbar{ display:flex; border-top:1px solid var(--can-line); background:var(--surface); }
+  .tabbar button{ flex:1; border:none; background:none; padding:11px 0 9px; display:flex;
+    flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--ink-faint); cursor:pointer; }
+  .tabbar button svg{ width:19px; height:19px; }
+  .tabbar button.active{ color:var(--primary); }
+
+  /* ===== SUPPLIER DASHBOARD ===== */
+  .dash-wrap{ display:none; width:min(1040px, 94vw); }
+  .dash-wrap.active{ display:block; }
+  .stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px; }
+  .stat{ background:var(--surface); border-radius:16px; padding:16px; box-shadow:0 2px 10px rgba(11,92,122,.06); }
+  .stat .lbl{ font-size:11.5px; color:var(--ink-soft); margin-bottom:6px; }
+  .stat .val{ font-family:var(--font-d); font-weight:700; font-size:22px; color:var(--primary-dark); }
+  .stat .delta{ font-size:11px; color:var(--good); margin-top:4px; }
+  .two-col{ display:grid; grid-template-columns:1.5fr 1fr; gap:16px; }
+  .dash-card{ background:var(--surface); border-radius:18px; padding:18px; box-shadow:0 2px 10px rgba(11,92,122,.06); }
+  .dash-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .dash-top h2{ font-family:var(--font-d); font-size:15px; color:var(--primary-dark); }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  th{ text-align:left; color:var(--ink-faint); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    padding-bottom:8px; border-bottom:1px solid var(--can-line); }
+  td{ padding:10px 0; border-bottom:1px solid #F3F7F8; color:var(--ink); }
+  .status-pill{ font-size:10.5px; font-weight:600; padding:4px 10px; border-radius:999px; }
+  .p-transit{ background:#FDF1E4; color:var(--warn); }
+  .p-new{ background:#E4F0FD; color:#2E6FE0; }
+  .p-delivered{ background:var(--good-bg); color:var(--good); }
+  .add-row{ display:flex; gap:8px; margin-top:14px; }
+  .chip-btn{ background:var(--can); border:none; color:var(--primary-dark); font-size:11.5px; font-weight:600;
+    padding:8px 12px; border-radius:999px; cursor:pointer; }
+  .bars{ display:flex; align-items:flex-end; gap:10px; height:110px; }
+  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; }
+  .bar{ width:100%; border-radius:6px 6px 0 0; }
+  .bar-col span{ font-size:10px; color:var(--ink-faint); }
+
+  /* ===== RIDER DASHBOARD ===== */
+  .rider-wrap{ display:none; width:375px; max-width:92vw; }
+  .rider-wrap.active{ display:block; }
+  .rider-summary{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+  .rider-summary .stat{ text-align:center; padding:12px 8px; }
+  .rider-summary .val{ font-size:18px; }
+  .delivery-item{ background:var(--surface); border-radius:16px; padding:14px; margin-bottom:12px;
+    box-shadow:0 2px 8px rgba(11,92,122,.05); }
+  .delivery-item .d-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .delivery-item h4{ font-size:13.5px; }
+  .delivery-item .d-addr{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .delivery-item .d-qty{ font-size:11.5px; color:var(--primary-dark); font-weight:600; }
+  .deliver-btn{ margin-top:10px; width:100%; border:none; background:var(--primary); color:#fff;
+    font-weight:600; font-size:12.5px; padding:10px; border-radius:10px; cursor:pointer; }
+  .deliver-btn.done{ background:var(--good-bg); color:var(--good); }
+  .dayclose-btn{ width:100%; border:none; background:var(--primary-dark); color:#fff; font-weight:600;
+    font-size:13px; padding:13px; border-radius:12px; cursor:pointer; margin-top:6px; }
+
+  .foot-note{ max-width:600px; text-align:center; font-size:12px; color:var(--ink-faint); margin-top:30px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="eyebrow">Prototype · v0.2 — with login</div>
+  <h1>AquaRoute</h1>
+  <p>A simple ordering app for water suppliers and the homes &amp; offices they deliver to — one app for customers, suppliers, and riders.</p>
+</div>
+
+<!-- ===================== SESSION BAR ===================== -->
+<div class="session-bar" id="sessionBar">
+  Logged in as <b id="sessionLabel"></b>
+  <button onclick="logout()">Log out</button>
+</div>
+
+<!-- ===================== LOGIN CARD ===================== -->
+<div class="login-card" id="loginCard">
+  <div class="role-tabs">
+    <button class="active" onclick="selectRole('customer', this)">Customer</button>
+    <button onclick="selectRole('supplier', this)">Supplier / Owner</button>
+    <button onclick="selectRole('rider', this)">Rider</button>
+  </div>
+
+  <div class="error-msg" id="loginError"></div>
+
+  <!-- STEP 1: phone -->
+  <div id="stepPhone">
+    <label>Mobile number</label>
+    <input type="tel" id="phoneInput" placeholder="e.g. 9876543210" />
+    <button class="btn btn-primary" onclick="sendOtp()">Send OTP</button>
+    <p class="field-note" style="margin-top:10px;">We'll text a 6-digit code to verify it's you.</p>
+  </div>
+
+  <!-- STEP 2: otp -->
+  <div id="stepOtp" style="display:none;">
+    <div class="dev-otp-hint" id="devOtpHint" style="display:none;"></div>
+    <label>Enter the 6-digit code</label>
+    <input type="text" id="otpInput" maxlength="6" placeholder="••••••" />
+    <button class="btn btn-primary" onclick="verifyOtp()">Verify &amp; Log in</button>
+    <button class="link-btn" onclick="backToPhone()">Use a different number</button>
+  </div>
+</div>
+
+<!-- ===================== CUSTOMER APP ===================== -->
+<div class="phone" id="customerPhone">
+  <div class="notch"></div>
+
+  <div class="screen active" id="s-home">
+    <div class="topbar">
+      <div class="greet-row">
+        <div>
+          <h2 id="custGreeting">Hi 👋</h2>
+          <div class="loc-chip">📍 Anna Nagar, Chennai</div>
+        </div>
+        <div class="avatar" id="custAvatar">A</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="card gauge-card">
+        <div class="gauge">
+          <svg width="84" height="84" viewBox="0 0 84 84">
+            <circle cx="42" cy="42" r="36" stroke="rgba(255,255,255,.25)" stroke-width="8" fill="none"/>
+            <circle cx="42" cy="42" r="36" stroke="#fff" stroke-width="8" fill="none"
+              stroke-dasharray="226" stroke-dashoffset="60" stroke-linecap="round"/>
+          </svg>
+          <div class="gauge-label"><div class="n">2</div><div class="u">CANS LEFT</div></div>
+        </div>
+        <div class="gauge-text">
+          <h3>Your water usually runs out in 2 days</h3>
+          <p>Based on your last 4 orders. Reorder now so you're never dry.</p>
+          <button class="btn btn-light" onclick="showToast('Reorder added to cart 🎉')">Reorder now</button>
+        </div>
+      </div>
+      <div class="banner">
+        <div class="dot"></div>
+        <p><b>Order out for delivery</b>Arriving today by 6:30 PM · Tap Track to follow along</p>
+      </div>
+      <div class="section-title">Quick order <span class="link">See all</span></div>
+      <div class="prod-grid">
+        <div class="prod-card">
+          <div class="prod-icon">🪣</div><h4>20L Can</h4><div class="price">₹40 / can</div>
+          <div class="stepper"><button onclick="return false">–</button><span class="qty">1</span><button onclick="return false">+</button></div>
+        </div>
+        <div class="prod-card">
+          <div class="prod-icon">🍶</div><h4>1L Pack (12)</h4><div class="price">₹96 / pack</div>
+          <div class="stepper"><button onclick="return false">–</button><span class="qty">0</span><button onclick="return false">+</button></div>
+        </div>
+      </div>
+      <div class="sub-banner">
+        <div><h4>Never run out — Monthly Refill Plan</h4><p>4 cans a month, auto-delivered · from ₹99/mo</p></div>
+        <button class="btn btn-light" style="white-space:nowrap;" onclick="go('s-profile')">View</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-order">
+    <div class="topbar"><div class="greet-row"><h2>Order water</h2></div></div>
+    <div class="content" style="padding-bottom:120px;">
+      <div class="cat-item"><div class="cat-icon">🪣</div>
+        <div class="cat-info"><h4>20L Can (returnable)</h4><span>₹40 · empty can picked up</span></div>
+        <div class="stepper" style="width:78px;"><button onclick="return false">–</button><span class="qty">2</span><button onclick="return false">+</button></div>
+      </div>
+      <div class="cat-item"><div class="cat-icon">🍶</div>
+        <div class="cat-info"><h4>1L Bottle Pack (12)</h4><span>₹96 per pack</span></div>
+        <div class="stepper" style="width:78px;"><button onclick="return false">–</button><span class="qty">0</span><button onclick="return false">+</button></div>
+      </div>
+      <div class="cat-item"><div class="cat-icon">🎪</div>
+        <div class="cat-info"><h4>Bulk order (events / halls)</h4><span>Custom quote for 50+ cans</span></div>
+        <button class="btn btn-outline" style="font-size:11px; padding:8px 10px;">Ask</button>
+      </div>
+    </div>
+    <div class="cart-bar"><span>2 items · ₹80</span><span class="go" onclick="showToast('Proceeding to checkout →')">Checkout →</span></div>
+  </div>
+
+  <div class="screen" id="s-track">
+    <div class="topbar"><div class="greet-row"><h2>Track order</h2></div></div>
+    <div class="content">
+      <span style="font-size:11.5px; color:var(--ink-soft);">Order #AR-10432 · 2 × 20L Can</span>
+      <div class="track-steps" style="margin-top:16px;">
+        <div class="t-step"><div class="t-line"><div class="t-dot done">✓</div><div class="t-bar filled"></div></div><div class="t-body"><h4>Order confirmed</h4><span>2:14 PM</span></div></div>
+        <div class="t-step"><div class="t-line"><div class="t-dot done">✓</div><div class="t-bar filled"></div></div><div class="t-body"><h4>Cans filled &amp; packed</h4><span>2:40 PM</span></div></div>
+        <div class="t-step"><div class="t-line"><div class="t-dot active"></div><div class="t-bar"></div></div><div class="t-body"><h4>Out for delivery</h4><span>Arriving by 6:30 PM</span></div></div>
+        <div class="t-step"><div class="t-line"><div class="t-dot todo"></div></div><div class="t-body"><h4 style="color:var(--ink-faint);">Delivered</h4></div></div>
+      </div>
+      <svg class="route-svg" height="90" viewBox="0 0 320 90"><path d="M10 70 C 90 10, 180 90, 310 25" stroke="#0B5C7A" stroke-width="3" fill="none" stroke-dasharray="6 7"/><circle cx="10" cy="70" r="6" fill="#0B5C7A"/><circle cx="310" cy="25" r="6" fill="#00B6D6"/></svg>
+      <div class="rider-card"><div class="rider-avatar">M</div><div class="rider-info"><h4>Murugan · Delivery Partner</h4><span>Bike · TN 09 AX 4521</span></div><button class="call-btn">📞</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-profile">
+    <div class="topbar"><div class="greet-row"><h2>Profile</h2></div></div>
+    <div class="content">
+      <div class="card" style="background:var(--primary-dark); margin-bottom:18px;">
+        <h4 style="font-family:var(--font-d); font-size:14px; margin-bottom:4px;">Monthly Refill Plan</h4>
+        <p style="font-size:11.5px; opacity:.85; margin-bottom:10px;">4 cans/month · next billing 3 Sep</p>
+        <button class="btn btn-light" style="font-size:11.5px;">Manage plan · ₹99/mo</button>
+      </div>
+      <div class="prof-row"><div class="prof-ic">📱</div><div><h4 id="custPhoneRow">Mobile number</h4><span>Used to log in</span></div></div>
+      <div class="prof-row"><div class="prof-ic">🏠</div><div><h4>Home — Anna Nagar</h4><span>Default delivery address</span></div></div>
+      <div class="prof-row"><div class="prof-ic">♻️</div><div><h4>Empty can pickup</h4><span>Notify supplier automatically</span></div><div class="toggle"></div></div>
+      <div class="prof-row"><div class="prof-ic">🧾</div><div><h4>Order history</h4><span>18 orders since Feb 2026</span></div></div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="active" onclick="tab(this,'s-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg>Home</button>
+    <button onclick="tab(this,'s-order')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L21 8H6"/></svg>Order</button>
+    <button onclick="tab(this,'s-track')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Track</button>
+    <button onclick="tab(this,'s-profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</button>
+  </div>
+</div>
+
+<!-- ===================== SUPPLIER DASHBOARD ===================== -->
+<div class="dash-wrap" id="supplierDash">
+  <div class="stat-row">
+    <div class="stat"><div class="lbl">Orders today</div><div class="val">86</div><div class="delta">↑ 12% vs yesterday</div></div>
+    <div class="stat"><div class="lbl">Revenue today</div><div class="val">₹9,240</div><div class="delta">↑ 8%</div></div>
+    <div class="stat"><div class="lbl">Active subscribers</div><div class="val">312</div><div class="delta">↑ 24 this month</div></div>
+    <div class="stat"><div class="lbl">Riders online</div><div class="val">7 / 9</div><div class="delta" style="color:var(--warn);">2 offline</div></div>
+  </div>
+  <div class="two-col">
+    <div class="dash-card">
+      <div class="dash-top"><h2>Live orders</h2><span class="link" style="color:var(--accent); font-size:11.5px; font-weight:600;">View all</span></div>
+      <table>
+        <tr><th>Order</th><th>Customer</th><th>Item</th><th>Rider</th><th>Status</th></tr>
+        <tr><td>#10432</td><td>Ayesha R.</td><td>2 × 20L Can</td><td>Murugan</td><td><span class="status-pill p-transit">Out for delivery</span></td></tr>
+        <tr><td>#10431</td><td>Grand Palace Hall</td><td>60 × 20L Can</td><td>Team B</td><td><span class="status-pill p-new">New — bulk</span></td></tr>
+        <tr><td>#10430</td><td>Karthik S.</td><td>1 × 1L Pack</td><td>Selvam</td><td><span class="status-pill p-delivered">Delivered</span></td></tr>
+      </table>
+      <div class="add-row">
+        <button class="chip-btn">+ Add product</button>
+        <button class="chip-btn">+ Add service area</button>
+      </div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-top"><h2>This week</h2></div>
+      <div class="bars">
+        <div class="bar-col"><div class="bar" style="height:52px; background:linear-gradient(180deg,#9fd8e6,#0B5C7A);"></div><span>Mon</span></div>
+        <div class="bar-col"><div class="bar" style="height:64px; background:linear-gradient(180deg,#9fd8e6,#0B5C7A);"></div><span>Tue</span></div>
+        <div class="bar-col"><div class="bar" style="height:48px; background:linear-gradient(180deg,#9fd8e6,#0B5C7A);"></div><span>Wed</span></div>
+        <div class="bar-col"><div class="bar" style="height:80px; background:linear-gradient(180deg,#9fd8e6,#0B5C7A);"></div><span>Thu</span></div>
+        <div class="bar-col"><div class="bar" style="height:70px; background:linear-gradient(180deg,#00B6D6,#073A4E);"></div><span>Fri</span></div>
+        <div class="bar-col"><div class="bar" style="height:96px; background:linear-gradient(180deg,#00B6D6,#073A4E);"></div><span>Sat</span></div>
+        <div class="bar-col"><div class="bar" style="height:40px; background:linear-gradient(180deg,#9fd8e6,#0B5C7A);"></div><span>Sun</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== RIDER DASHBOARD ===================== -->
+<div class="rider-wrap" id="riderDash">
+  <div class="rider-summary">
+    <div class="stat"><div class="lbl">Assigned</div><div class="val">6</div></div>
+    <div class="stat"><div class="lbl">Delivered</div><div class="val" id="riderDeliveredCount">0</div></div>
+    <div class="stat"><div class="lbl">Remaining</div><div class="val" id="riderRemainingCount">6</div></div>
+  </div>
+  <div id="riderDeliveryList">
+    <div class="delivery-item" data-status="pending">
+      <div class="d-top"><h4>Green Meadows – Flat 4B</h4><span class="d-qty">2 cans</span></div>
+      <div class="d-addr">Priya · Gate hours 8am–9pm</div>
+      <button class="deliver-btn" onclick="markDelivered(this)">Mark delivered</button>
+    </div>
+    <div class="delivery-item" data-status="pending">
+      <div class="d-top"><h4>Green Meadows – Flat 8A</h4><span class="d-qty">1 can</span></div>
+      <div class="d-addr">Karthik · Leave at security if absent</div>
+      <button class="deliver-btn" onclick="markDelivered(this)">Mark delivered</button>
+    </div>
+    <div class="delivery-item" data-status="pending">
+      <div class="d-top"><h4>Apartment XYZ</h4><span class="d-qty">3 cans</span></div>
+      <div class="d-addr">Sunrise Offices, Guindy</div>
+      <button class="deliver-btn" onclick="markDelivered(this)">Mark delivered</button>
+    </div>
+  </div>
+  <button class="dayclose-btn" onclick="showToast('Day close submitted — pending owner confirmation')">Close out my day</button>
+</div>
+
+<p class="foot-note">Prototype — connects to your local API at <code id="apiBaseLabel"></code>. Log in with any phone number; the OTP is shown on screen for local testing.</p>
+
+<div id="toast" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:#0F2630; color:#fff; padding:11px 20px; border-radius:10px; font-size:12.5px; opacity:0; transition:.25s; pointer-events:none;"></div>
+
+<script>
+// ===== CONFIG =====
+// Change this if your NestJS API runs on a different port/host.
+const API_BASE = 'http://localhost:3000';
+document.getElementById('apiBaseLabel').textContent = API_BASE;
+
+// ===== STATE =====
+let selectedRole = 'customer';
+let pendingPhone = '';
+
+// ===== ROLE SELECTION (login screen) =====
+function selectRole(role, btn){
+  selectedRole = role;
+  document.querySelectorAll('.role-tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  backToPhone();
+}
+
+function showLoginError(msg){
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearLoginError(){
+  document.getElementById('loginError').classList.remove('show');
+}
+
+function backToPhone(){
+  document.getElementById('stepPhone').style.display = 'block';
+  document.getElementById('stepOtp').style.display = 'none';
+  clearLoginError();
+}
+
+// ===== STEP 1: request OTP =====
+async function sendOtp(){
+  clearLoginError();
+  const phone = document.getElementById('phoneInput').value.trim();
+  if(!phone){ showLoginError('Enter a mobile number first.'); return; }
+  pendingPhone = phone;
+
+  try{
+    const res = await fetch(`${API_BASE}/auth/otp`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, role: selectedRole })
+    });
+    const data = await res.json();
+    if(!res.ok){ showLoginError(data.message || 'Could not send OTP.'); return; }
+
+    document.getElementById('stepPhone').style.display = 'none';
+    document.getElementById('stepOtp').style.display = 'block';
+
+    const hint = document.getElementById('devOtpHint');
+    if(data.devOtp){
+      hint.style.display = 'block';
+      hint.textContent = `Dev mode — your OTP is ${data.devOtp}`;
+    } else {
+      hint.style.display = 'none';
+    }
+  } catch(err){
+    showLoginError('Could not reach the API. Is it running at ' + API_BASE + '?');
+  }
+}
+
+// ===== STEP 2: verify OTP =====
+async function verifyOtp(){
+  clearLoginError();
+  const code = document.getElementById('otpInput').value.trim();
+  if(code.length !== 6){ showLoginError('Enter the 6-digit code.'); return; }
+
+  try{
+    const res = await fetch(`${API_BASE}/auth/verify`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: pendingPhone, code, role: selectedRole })
+    });
+    const data = await res.json();
+    if(!res.ok){ showLoginError(data.message || 'Incorrect code.'); return; }
+
+    // Save the session so a page refresh keeps you logged in
+    localStorage.setItem('wow_token', data.accessToken);
+    localStorage.setItem('wow_role', data.user.role);
+    localStorage.setItem('wow_phone', data.user.phone);
+
+    enterApp(data.user.role, data.user.phone);
+  } catch(err){
+    showLoginError('Could not reach the API. Is it running at ' + API_BASE + '?');
+  }
+}
+
+// ===== SHOW THE RIGHT DASHBOARD AFTER LOGIN =====
+function enterApp(role, phone){
+  document.getElementById('loginCard').style.display = 'none';
+
+  const bar = document.getElementById('sessionBar');
+  bar.classList.add('active');
+  document.getElementById('sessionLabel').textContent = `${phone} · ${role}`;
+
+  document.getElementById('customerPhone').classList.toggle('active', role === 'customer');
+  document.getElementById('supplierDash').classList.toggle('active', role === 'supplier');
+  document.getElementById('riderDash').classList.toggle('active', role === 'rider');
+
+  if(role === 'customer'){
+    document.getElementById('custGreeting').textContent = `Hi 👋`;
+    document.getElementById('custAvatar').textContent = phone.slice(-2);
+    document.getElementById('custPhoneRow').textContent = phone;
+  }
+}
+
+function logout(){
+  localStorage.removeItem('wow_token');
+  localStorage.removeItem('wow_role');
+  localStorage.removeItem('wow_phone');
+
+  document.getElementById('sessionBar').classList.remove('active');
+  document.getElementById('loginCard').style.display = 'block';
+  document.getElementById('customerPhone').classList.remove('active');
+  document.getElementById('supplierDash').classList.remove('active');
+  document.getElementById('riderDash').classList.remove('active');
+  backToPhone();
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('otpInput').value = '';
+}
+
+// Restore session on page load if a token is already saved
+window.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('wow_token');
+  const role = localStorage.getItem('wow_role');
+  const phone = localStorage.getItem('wow_phone');
+  if(token && role && phone){
+    enterApp(role, phone);
+  }
+});
+
+// ===== CUSTOMER APP: tab navigation (unchanged from prototype) =====
+function tab(btn, id){
+  document.querySelectorAll('#customerPhone .screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function go(id){
+  document.querySelectorAll('#customerPhone .screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = 1;
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(()=>{ t.style.opacity=0; t.style.transform='translateX(-50%) translateY(20px)'; }, 1800);
+}
+
+// ===== RIDER DASHBOARD: mark delivered =====
+function markDelivered(btn){
+  if(btn.classList.contains('done')) return;
+  btn.classList.add('done');
+  btn.textContent = 'Delivered ✓';
+  const delivered = document.querySelectorAll('.deliver-btn.done').length;
+  const total = document.querySelectorAll('.deliver-btn').length;
+  document.getElementById('riderDeliveredCount').textContent = delivered;
+  document.getElementById('riderRemainingCount').textContent = total - delivered;
+}
+</script>
+</body>
+</html>

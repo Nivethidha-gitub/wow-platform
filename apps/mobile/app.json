@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "AquaRoute",
+    "slug": "wow-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": { "backgroundColor": "#0B5C7A" },
+    "ios": { "supportsTablet": false },
+    "android": {}
+  }
+}

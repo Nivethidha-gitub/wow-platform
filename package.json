@@ -1,0 +1,9 @@
+
+{
+  "name": "wow-project",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
